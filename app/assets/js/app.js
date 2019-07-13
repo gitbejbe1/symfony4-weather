@@ -1,14 +1,32 @@
-/*
- * Welcome to your app's main JavaScript file!
- *
- * We recommend including the built version of this JavaScript file
- * (and its CSS file) in your base layout (base.html.twig).
- */
 
-// any CSS you require will output into a single css file (app.css in this case)
-require('../css/app.css');
+import React from "react";
+import { render } from "react-dom";
+import { BrowserRouter, Route, Switch } from 'react-router-dom'
 
-// Need jQuery? Install it with "yarn add jquery", then uncomment to require it.
-// const $ = require('jquery');
+import Navbar from './components/Navbar'
+import DashboardPage from './pages/Dashboard'
+import HistoryPage from './pages/History'
 
-console.log('Hello Webpack Encore! Edit me in assets/js/app.js');
+class App extends React.Component {
+	
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return (
+		<BrowserRouter>
+            <div>
+              <Navbar />
+              <Switch>
+                <Route exact path='/' component={DashboardPage} />
+                <Route exact path='/history' component={HistoryPage} />
+              </Switch>
+            </div>
+          </BrowserRouter>
+	)
+  }
+}
+
+render(<App />, document.getElementById("root"));
+
