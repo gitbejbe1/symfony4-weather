@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types';
+import axios from 'axios';
 import { Link } from 'react-router-dom'
 import { withStyles } from '@material-ui/styles';
 import { Map, GoogleApiWrapper, Marker } from 'google-maps-react';
@@ -8,15 +9,13 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import LinearProgress from '@material-ui/core/LinearProgress';
 
-const AnyReactComponent = ({ text }) => <div>{text}</div>;
-
 const styles = theme => ({
     root: {
         flexGrow: 1,
     },
     map: {
         position: "relative !important",
-        minHeight: "70vh !important"
+        minHeight: "26em !important"
     },
     paper: {
         position: "relative",
@@ -34,14 +33,6 @@ const styles = theme => ({
 
 });
 
-const History = () => (
-
-	<div className='container'>
-	  History Page
-	</div>
-)
-
-
 class Dashboard extends Component {
 
     constructor(props) {
@@ -52,53 +43,105 @@ class Dashboard extends Component {
                 lat: 52.229675,
                 lng: 21.012230
             },
-            weather: {},
-            loading: true,
+            weather: this.getPreviewDataTemplate(),
+            loading: false
+        }
+
+    }
+
+    componentDidMount(){
+        this.onMapClicked();
+    }
+
+    getPreviewDataTemplate(data)
+    {
+        let template = {
+            location: 'Unknown',
+            description: '--',
+            icon: '01n',
+            temp: '--',
+            pressure: '--',
+            humidity: '--',
+            wind: '--',
         };
 
+        return typeof data === 'object' ? Object.assign({}, template, data) : template;
     }
 
-    componentDidMount() {
-        this.getWeather();
-    }
-
-    getWeather(lat, lng) {
+    getWeather(lat, lng)
+    {
         lat = lat || this.state.cordinates.lat;
         lng = lng || this.state.cordinates.lng;
 
-        this.setState({
-            loading: true
-        })
-
-        fetch("http://api.openweathermap.org/data/2.5/weather?lat="+lat+"&lon="+lng+"&units=metric&APPID=739f64dff99e662803ec9a6f6445af8d")
-        .then(res => res.json())
-        .then(
-            (result) => {
-
-                if(result.cod === 200){
-                    this.setState({
-                        cordinates: {lat: lat, lng: lng},
-                        weather: result,
-                        loading: false
-                    });
-                }
-                else{
-                    this.setState({
-                        loading: false
-                    });
-                }
-            },
-        )
+        return axios.get("http://api.openweathermap.org/data/2.5/weather?lat="+lat+"&lon="+lng+"&units=metric&APPID=739f64dff99e662803ec9a6f6445af8d");
     }
 
-    onMapClicked(mapProps, map, event) {
+    saveWeather(weatherData)
+    {
+        return axios.post("/api/addToStore", weatherData);
+    }
 
-        const { loading, weather } = this.state;
+    async onMapClicked(mapProps, map, event)
+    {
+        const { loading, cordinates } = this.state;
 
-        var lat = event.latLng.lat(),
-            lng = event.latLng.lng();
+        if(loading) return false;
 
-        if(!loading) this.getWeather(lat, lng);
+        var lat = event ? event.latLng.lat() : cordinates.lat,
+            lng = event ? event.latLng.lng() : cordinates.lng,
+            date = new Date();
+
+            date.setTime(date.getTime() - date.getTimezoneOffset() * 60000);
+
+        this.setState({
+            loading: true,
+            cordinates: { lat: lat, lng: lng },
+            weather: this.getPreviewDataTemplate({location: "Downloading data"})
+        });
+
+        try {
+          const weatherData = await this.getWeather(lat, lng);
+
+          if(weatherData.data && weatherData.data.cod === 200){
+
+              let data = {
+                  lat: lat,
+                  lng: lng,
+                  location: weatherData.data.name,
+                  description: weatherData.data.weather[0].description,
+                  icon: weatherData.data.weather[0].icon,
+                  temp: weatherData.data.main.temp,
+                  pressure: weatherData.data.main.pressure,
+                  humidity: weatherData.data.main.humidity,
+                  wind: weatherData.data.wind.speed,
+                  time: date
+              }
+
+              var saveAction = await this.saveWeather(data);
+
+              if(saveAction.data.status === 'recive'){
+                  this.setState({
+                    weather: this.getPreviewDataTemplate(data),
+                    loading: false
+                  });
+              }
+              else throw "There was an error while seaving data";
+          }
+          else throw "There is no weather data for this location";
+
+        }
+        catch(e) {
+            console.error(e);
+
+            this.setState({
+                loading: false,
+                weather: this.getPreviewDataTemplate({
+                  location: 'No weather data for this location',
+                  description: 'please select another',
+                })
+            });
+        }
+
     }
 
     render() {
@@ -115,6 +158,9 @@ class Dashboard extends Component {
                             Click on the selected place on the map to download the weather
                         </Typography>
                         <Paper className={classes.paper}>
+
+                            {loading && ( <LinearProgress className={classes.loader} /> )}
+
                             <Map
                                 google={this.props.google}
                                 initialCenter={cordinates}
@@ -134,26 +180,26 @@ class Dashboard extends Component {
 
                         {loading && ( <LinearProgress className={classes.loader} /> )}
 
-                        {weather.name && (
+                        {weather.location && (
                             <div>
                                 <Typography variant="h2" component="h2" gutterBottom>
-                                    {weather.name}
+                                    {weather.location}
                                 </Typography>
 
                                 <Typography variant="h5" component="h5" gutterBottom>
-                                    {weather.weather[0].description}
+                                    {weather.description}
                                 </Typography>
 
-                                <img src={"http://openweathermap.org/img/wn/"+ weather.weather[0].icon +"@2x.png"} />
+                                <img src={"http://openweathermap.org/img/wn/"+ weather.icon +"@2x.png"} />
 
                                 <Typography variant="h3" component="h3" gutterBottom>
-                                    {weather.main.temp + "°"}
+                                    {weather.temp + "°"}
                                 </Typography>
 
                                 <Grid container spacing={3}>
                                     <Grid item xs={4}>
                                         <Typography variant="h6" gutterBottom>
-                                            {weather.main.pressure + " hPa"}
+                                            {weather.pressure + " hPa"}
                                         </Typography>
                                         <Typography variant="subtitle2" component="h6" gutterBottom>
                                             Pressure
@@ -161,7 +207,7 @@ class Dashboard extends Component {
                                     </Grid>
                                     <Grid item xs={4}>
                                         <Typography variant="h6" gutterBottom>
-                                            {weather.main.humidity + " %"}
+                                            {weather.humidity + " %"}
                                         </Typography>
                                         <Typography variant="subtitle2" component="h6" gutterBottom>
                                             Humidity
@@ -169,7 +215,7 @@ class Dashboard extends Component {
                                     </Grid>
                                     <Grid item xs={4}>
                                         <Typography variant="h6" gutterBottom>
-                                            {weather.wind.speed + " km/h"}
+                                            {weather.wind + " km/h"}
                                         </Typography>
                                         <Typography variant="subtitle2" component="h6" gutterBottom>
                                             Wind

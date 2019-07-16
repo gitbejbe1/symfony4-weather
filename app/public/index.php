@@ -3,11 +3,7 @@
 use App\Kernel;
 use Symfony\Component\Debug\Debug;
 use Symfony\Component\HttpFoundation\Request;
-//echo phpinfo(); exit;
-//$conn = new \PDO('mysql:dbname=db;host=db;charset=UTF8;', 'root', 'root');
-//$conn = new \PDO('mysql:dbname=db;host=localhost;charset=UTF8;unix_socket=/var/run/mysqld/mysqld.sock', 'user', 'userpass');
-//print_r($conn);
-//exit;
+
 require dirname(__DIR__).'/config/bootstrap.php';
 
 if ($_SERVER['APP_DEBUG']) {
