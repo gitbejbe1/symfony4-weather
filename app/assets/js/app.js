@@ -28,7 +28,7 @@ class App extends React.Component {
                     <Container style={{paddingTop: "35px"}}>
                         <Switch>
                         <Route exact path='/' component={DashboardPage} />
-                        <Route exact path='/history' component={HistoryPage} />
+                        <Route path='/history' component={HistoryPage} />
                         </Switch>
                     </Container>
 

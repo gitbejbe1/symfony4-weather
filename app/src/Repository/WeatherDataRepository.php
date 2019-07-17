@@ -6,12 +6,6 @@ use App\Entity\WeatherData;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
-/**
- * @method WeatherData|null find($id, $lockMode = null, $lockVersion = null)
- * @method WeatherData|null findOneBy(array $criteria, array $orderBy = null)
- * @method WeatherData[]    findAll()
- * @method WeatherData[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
- */
 class WeatherDataRepository extends ServiceEntityRepository
 {
     public function __construct(RegistryInterface $registry)
@@ -19,32 +13,53 @@ class WeatherDataRepository extends ServiceEntityRepository
         parent::__construct($registry, WeatherData::class);
     }
 
-    // /**
-    //  * @return WeatherData[] Returns an array of WeatherData objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    public function getTotalRows()
     {
-        return $this->createQueryBuilder('w')
-            ->andWhere('w.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('w.id', 'ASC')
-            ->setMaxResults(10)
+        return $this->createQueryBuilder('d')
+            ->select("count(d.id)")
             ->getQuery()
-            ->getResult()
+            ->getSingleScalarResult()
         ;
     }
-    */
 
-    /*
-    public function findOneBySomeField($value): ?WeatherData
+    public function getByRange($start, $limit)
     {
-        return $this->createQueryBuilder('w')
-            ->andWhere('w.exampleField = :val')
-            ->setParameter('val', $value)
+        return $this->createQueryBuilder('d')
+            ->select('d')
+            ->setFirstResult($start)
+            ->setMaxResults($limit)
+            ->orderBy('d.time', 'DESC')
             ->getQuery()
-            ->getOneOrNullResult()
+            ->getArrayResult()
         ;
     }
-    */
+
+
+    public function getStatistics()
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query1 = $this->createQueryBuilder('d')
+            ->select('
+                MIN(d.temp) as minTemp,
+                MAX(d.temp) as maxTemp,
+                AVG(d.temp) as avgTemp,
+                COUNT(d.id) as totalRows
+            ')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getSingleResult()
+        ;
+
+        $query2 = $this->createQueryBuilder('d')
+            ->select('d.location as commonLocation')
+            ->groupBy('d.location')
+            ->orderBY('COUNT(d.location)', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getSingleResult()
+        ;
+
+        return array_merge($query1, $query2);
+    }
 }
