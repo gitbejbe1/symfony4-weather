@@ -27,19 +27,35 @@ class HistoryController extends AbstractController
     public function getHistoryData(Request $request, $page): JsonResponse
     {
         $limit = 10;
-        $start = ($page && $page > 0) ? $page * $limit : 0;
+        $start = $page ? $page * $limit : 0;
 
         $repositiory = $this->entityManager->getRepository(WeatherData::class);
 
         $rows = $repositiory->getByRange($start, $limit);
         $totalRows = $repositiory->getTotalRows();
+        $stats = $repositiory->getStatistics();
 
         return new JsonResponse(
              [
                  'rows' => $rows,
                  'totalRows' => $totalRows,
-                 'start'=> $start,
-                 'limit' => $limit
+                 'stats' => $stats
+             ],
+             JsonResponse::HTTP_CREATED
+         );
+    }
+
+    /**
+     * @Route("/api/getStatisticsData", name="getStatisticsData", methods={"GET"})
+     */
+    public function getStatisticsData(): JsonResponse
+    {
+        $repositiory = $this->entityManager->getRepository(WeatherData::class);
+        $stats = $repositiory->getStatistics();
+
+        return new JsonResponse(
+             [
+                 'stats' => $stats
              ],
              JsonResponse::HTTP_CREATED
          );

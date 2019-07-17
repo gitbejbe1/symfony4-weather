@@ -22,49 +22,44 @@ class WeatherDataRepository extends ServiceEntityRepository
         ;
     }
 
-    /**
-    * @return WeatherData[] Returns an array of WeatherData objects
-    */
     public function getByRange($start, $limit)
     {
         return $this->createQueryBuilder('d')
             ->select('d')
             ->setFirstResult($start)
             ->setMaxResults($limit)
-            ->orderBy('d.time', 'ASC')
+            ->orderBy('d.time', 'DESC')
             ->getQuery()
             ->getArrayResult()
         ;
     }
 
 
-
-    // /**
-    //  * @return WeatherData[] Returns an array of WeatherData objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    public function getStatistics()
     {
-        return $this->createQueryBuilder('w')
-            ->andWhere('w.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('w.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
+        $entityManager = $this->getEntityManager();
 
-    /*
-    public function findOneBySomeField($value): ?WeatherData
-    {
-        return $this->createQueryBuilder('w')
-            ->andWhere('w.exampleField = :val')
-            ->setParameter('val', $value)
+        $query1 = $this->createQueryBuilder('d')
+            ->select('
+                MIN(d.temp) as minTemp,
+                MAX(d.temp) as maxTemp,
+                AVG(d.temp) as avgTemp,
+                COUNT(d.id) as totalRows
+            ')
+            ->setMaxResults(1)
             ->getQuery()
-            ->getOneOrNullResult()
+            ->getSingleResult()
         ;
+
+        $query2 = $this->createQueryBuilder('d')
+            ->select('d.location as commonLocation')
+            ->groupBy('d.location')
+            ->orderBY('COUNT(d.location)', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getSingleResult()
+        ;
+
+        return array_merge($query1, $query2);
     }
-    */
 }
