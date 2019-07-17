@@ -24,14 +24,6 @@ class DashboardController extends AbstractController
     }
 
     /**
-     * @Route("/{reactRouting}", name="index", defaults={"reactRouting": null})
-     */
-    public function index()
-    {
-        return $this->render('base.html.twig');
-    }
-
-    /**
      * @Route("/api/addToStore", name="addToStore", methods={"POST"})
      */
     public function addToStore(Request $request): JsonResponse

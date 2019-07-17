@@ -6,18 +6,38 @@ use App\Entity\WeatherData;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
-/**
- * @method WeatherData|null find($id, $lockMode = null, $lockVersion = null)
- * @method WeatherData|null findOneBy(array $criteria, array $orderBy = null)
- * @method WeatherData[]    findAll()
- * @method WeatherData[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
- */
 class WeatherDataRepository extends ServiceEntityRepository
 {
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, WeatherData::class);
     }
+
+    public function getTotalRows()
+    {
+        return $this->createQueryBuilder('d')
+            ->select("count(d.id)")
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
+    }
+
+    /**
+    * @return WeatherData[] Returns an array of WeatherData objects
+    */
+    public function getByRange($start, $limit)
+    {
+        return $this->createQueryBuilder('d')
+            ->select('d')
+            ->setFirstResult($start)
+            ->setMaxResults($limit)
+            ->orderBy('d.time', 'ASC')
+            ->getQuery()
+            ->getArrayResult()
+        ;
+    }
+
+
 
     // /**
     //  * @return WeatherData[] Returns an array of WeatherData objects
