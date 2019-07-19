@@ -33,13 +33,11 @@ class HistoryController extends AbstractController
 
         $rows = $repositiory->getByRange($start, $limit);
         $totalRows = $repositiory->getTotalRows();
-        $stats = $repositiory->getStatistics();
 
         return new JsonResponse(
              [
                  'rows' => $rows,
                  'totalRows' => $totalRows,
-                 'stats' => $stats
              ],
              JsonResponse::HTTP_CREATED
          );
